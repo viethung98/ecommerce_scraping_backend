@@ -1,0 +1,343 @@
+{
+  "info": {
+    "name": "Amazon Shopping Agent API",
+    "description": "AI-powered shopping agent with hybrid search architecture using Browser Use Cloud API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "amazon-shopping-agent",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "sampleAsin",
+      "value": "B08N5WRWNW",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "user123",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check API health status and uptime"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Hybrid Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=laptop&minPrice=500&maxPrice=2000&minRating=4&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "laptop",
+                  "description": "Search query (required)"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "500",
+                  "description": "Minimum price filter"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "2000",
+                  "description": "Maximum price filter"
+                },
+                {
+                  "key": "minRating",
+                  "value": "4",
+                  "description": "Minimum rating (0-5)"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Results per page (max: 100)"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Product category filter",
+                  "disabled": true
+                },
+                {
+                  "key": "brand",
+                  "value": "",
+                  "description": "Brand filter",
+                  "disabled": true
+                },
+                {
+                  "key": "forceRealtime",
+                  "value": "false",
+                  "description": "Force realtime search",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Smart routing between cached and realtime search"
+          },
+          "response": []
+        },
+        {
+          "name": "Cached Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/cached?q=laptop&minPrice=500&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "cached"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "laptop"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "500"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Fast search from indexed database"
+          },
+          "response": []
+        },
+        {
+          "name": "Realtime Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/realtime?q=laptop&minPrice=500&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "realtime"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "laptop"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "500"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Fresh data from Amazon via Browser Use Cloud API"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "status"]
+            },
+            "description": "Get search system status"
+          },
+          "response": []
+        },
+        {
+          "name": "Popular Queries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/popular?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "popular"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get most popular search queries"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get Product (Realtime)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/realtime/product/{{sampleAsin}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "realtime", "product", "{{sampleAsin}}"]
+            },
+            "description": "Get fresh product details from Amazon"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product (Cached)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/cached/product/{{sampleAsin}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "cached", "product", "{{sampleAsin}}"]
+            },
+            "description": "Get product details from database"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Trigger Full Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": [\"laptop\", \"headphones\", \"phone\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/sync/trigger/full",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "sync", "trigger", "full"]
+            },
+            "description": "Trigger full product synchronization"
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger Price Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/sync/trigger/price-refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "sync", "trigger", "price-refresh"]
+            },
+            "description": "Update prices for stale products"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sync Job Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/sync/status/:jobId",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "sync", "status", ":jobId"],
+              "variable": [
+                {
+                  "key": "jobId",
+                  "value": "uuid-here",
+                  "description": "Job ID from sync trigger response"
+                }
+              ]
+            },
+            "description": "Get status of a sync job"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent Sync Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/sync/jobs?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "sync", "jobs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of recent jobs to fetch"
+                }
+              ]
+            },
+            "description": "Get list of recent sync jobs"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
