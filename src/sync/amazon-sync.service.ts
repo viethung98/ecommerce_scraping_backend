@@ -1,14 +1,12 @@
+import { SyncJobEntity, SyncJobStatus, SyncJobType } from "@/database/entities";
+import {
+  PriceHistoryRepository,
+  ProductRepository,
+} from "@/database/repositories";
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import {
-    SyncJobEntity,
-    SyncJobStatus,
-    SyncJobType,
-} from "../database/entities/sync-job.entity";
-import { PriceHistoryRepository } from "../database/repositories/price-history.repository";
-import { ProductRepository } from "../database/repositories/product.repository";
 import { NormalizationService } from "../normalization/normalization.service";
 import { BrowserUseClientService } from "../realtime-search/browser-use-client.service";
 import { MeilisearchService } from "../search/meilisearch.service";

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { LessThan, Repository } from "typeorm";
-import { PriceHistoryEntity } from "../entities/price-history.entity";
+import { PriceHistoryEntity } from "../entities";
 
 @Injectable()
 export class PriceHistoryRepository {

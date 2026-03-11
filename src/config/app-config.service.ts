@@ -98,4 +98,28 @@ export class AppConfigService {
   get fullSyncCron(): string {
     return this.configService.get<string>("FULL_SYNC_CRON", "0 0 * * *");
   }
+
+  // Sui / USDC Payment
+  get suiRpcUrl(): string {
+    return this.configService.get<string>(
+      "SUI_RPC_URL",
+      "https://fullnode.mainnet.sui.io:443",
+    );
+  }
+
+  get suiNetwork(): string {
+    return this.configService.get<string>("SUI_NETWORK", "sui:mainnet");
+  }
+
+  get suiMerchantWallet(): string {
+    return this.configService.get<string>("SUI_MERCHANT_WALLET", "");
+  }
+
+  /**
+   * Full Sui coin type for USDC, e.g.
+   * 0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN
+   */
+  get suiUsdcCoinType(): string {
+    return this.configService.get<string>("SUI_USDC_COIN_TYPE", "");
+  }
 }

@@ -1,12 +1,20 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AppConfigService } from "../config/app-config.service";
-import { AsinTrackingEntity } from "./entities/asin-tracking.entity";
-import { PriceHistoryEntity } from "./entities/price-history.entity";
-import { ProductEntity } from "./entities/product.entity";
-import { SyncJobEntity } from "./entities/sync-job.entity";
-import { PriceHistoryRepository } from "./repositories/price-history.repository";
-import { ProductRepository } from "./repositories/product.repository";
+import {
+  AsinTrackingEntity,
+  CartEntity,
+  ChatSessionEntity,
+  OrderEntity,
+  PaymentEntity,
+  PriceAlertEntity,
+  PriceHistoryEntity,
+  ProductEntity,
+  SyncJobEntity,
+  UserInteractionEntity,
+  UserProfileEntity,
+} from "./entities";
+import { PriceHistoryRepository, ProductRepository } from "./repositories";
 
 @Module({
   imports: [
@@ -24,6 +32,13 @@ import { ProductRepository } from "./repositories/product.repository";
           PriceHistoryEntity,
           AsinTrackingEntity,
           SyncJobEntity,
+          PriceAlertEntity,
+          UserProfileEntity,
+          UserInteractionEntity,
+          ChatSessionEntity,
+          CartEntity,
+          OrderEntity,
+          PaymentEntity,
         ],
         synchronize: config.nodeEnv === "development", // Don't use in production
         logging: config.nodeEnv === "development",
@@ -34,6 +49,13 @@ import { ProductRepository } from "./repositories/product.repository";
       PriceHistoryEntity,
       AsinTrackingEntity,
       SyncJobEntity,
+      PriceAlertEntity,
+      UserProfileEntity,
+      UserInteractionEntity,
+      ChatSessionEntity,
+      CartEntity,
+      OrderEntity,
+      PaymentEntity,
     ]),
   ],
   providers: [ProductRepository, PriceHistoryRepository],

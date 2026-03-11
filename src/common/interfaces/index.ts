@@ -59,9 +59,25 @@ export interface SearchFilters {
   minPrice?: number;
   maxPrice?: number;
   minRating?: number;
+  maxRating?: number;
   minReviewCount?: number;
   available?: boolean;
   fulfillment?: string;
+  // Advanced filters
+  brands?: string[];
+  categories?: string[];
+  freeShipping?: boolean;
+  prime?: boolean;
+  onSale?: boolean;
+  features?: string[];
+  condition?: "new" | "used" | "refurbished";
+  sortBy?:
+    | "price_asc"
+    | "price_desc"
+    | "rating"
+    | "newest"
+    | "popular"
+    | "relevance";
 }
 
 // Search Result

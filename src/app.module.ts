@@ -9,6 +9,11 @@ import { HybridOrchestratorModule } from "./orchestrator/hybrid-orchestrator.mod
 import { RealtimeSearchModule } from "./realtime-search/realtime-search.module";
 import { SearchModule } from "./search/search.module";
 import { AmazonSyncModule } from "./sync/amazon-sync.module";
+import { UserModule } from "./user/user.module";
+import { ChatModule } from "./chat/chat.module";
+import { CartModule } from "./cart/cart.module";
+import { OrderModule } from "./order/order.module";
+import { PaymentModule } from "./payment/payment.module";
 
 @Module({
   imports: [
@@ -18,11 +23,16 @@ import { AmazonSyncModule } from "./sync/amazon-sync.module";
     }),
     AppConfigModule,
     DatabaseModule,
+    UserModule,
     NormalizationModule,
     SearchModule,
     RealtimeSearchModule,
     HybridOrchestratorModule,
     AmazonSyncModule,
+    ChatModule,
+    CartModule,
+    OrderModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

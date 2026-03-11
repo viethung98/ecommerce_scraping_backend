@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
+import { AdvancedSearchDto } from "../common/dto/advanced-search.dto";
 import { SearchResponseDto } from "../common/dto/response.dto";
-import { SearchQueryDto } from "../common/dto/search.dto";
 import { CachedSearchService } from "./cached-search.service";
 
 @Controller("search/cached")
@@ -8,13 +8,22 @@ export class CachedSearchController {
   constructor(private readonly cachedSearch: CachedSearchService) {}
 
   @Get()
-  async search(@Query() query: SearchQueryDto): Promise<SearchResponseDto> {
+  async search(@Query() query: AdvancedSearchDto): Promise<SearchResponseDto> {
     const filters = {
       category: query.category,
       brand: query.brand,
       minPrice: query.minPrice,
       maxPrice: query.maxPrice,
       minRating: query.minRating,
+      brands: query.brands,
+      categories: query.categories,
+      freeShipping: query.freeShipping,
+      prime: query.prime,
+      onSale: query.onSale,
+      maxRating: query.maxRating,
+      features: query.features,
+      condition: query.condition,
+      sortBy: query.sortBy,
     };
 
     const result = await this.cachedSearch.search(

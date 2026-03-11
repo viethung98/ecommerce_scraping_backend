@@ -96,8 +96,22 @@ export class CachedSearchService {
       conditions.push(`category = "${filters.category}"`);
     }
 
+    if (filters.categories && filters.categories.length > 0) {
+      const categoryConditions = filters.categories.map(
+        (cat) => `category = "${cat}"`,
+      );
+      conditions.push(`(${categoryConditions.join(" OR ")})`);
+    }
+
     if (filters.brand) {
       conditions.push(`brand = "${filters.brand}"`);
+    }
+
+    if (filters.brands && filters.brands.length > 0) {
+      const brandConditions = filters.brands.map(
+        (brand) => `brand = "${brand}"`,
+      );
+      conditions.push(`(${brandConditions.join(" OR ")})`);
     }
 
     if (filters.minPrice !== undefined) {
@@ -112,6 +126,10 @@ export class CachedSearchService {
       conditions.push(`rating >= ${filters.minRating}`);
     }
 
+    if (filters.maxRating !== undefined) {
+      conditions.push(`rating <= ${filters.maxRating}`);
+    }
+
     if (filters.minReviewCount !== undefined) {
       conditions.push(`reviewCount >= ${filters.minReviewCount}`);
     }
@@ -120,8 +138,28 @@ export class CachedSearchService {
       conditions.push(`available = ${filters.available}`);
     }
 
-    if (filters.fulfillment) {
-      conditions.push(`fulfillment = "${filters.fulfillment}"`);
+    if (filters.freeShipping !== undefined) {
+      conditions.push(`freeShipping = ${filters.freeShipping}`);
+    }
+
+    if (filters.prime !== undefined) {
+      conditions.push(`prime = ${filters.prime}`);
+    }
+
+    if (filters.onSale !== undefined) {
+      conditions.push(`onSale = ${filters.onSale}`);
+    }
+
+    if (filters.condition) {
+      conditions.push(`condition = "${filters.condition}"`);
+    }
+
+    if (filters.features && filters.features.length > 0) {
+      // Check if product has any of the specified features
+      const featureConditions = filters.features.map(
+        (feature) => `features CONTAINS "${feature}"`,
+      );
+      conditions.push(`(${featureConditions.join(" OR ")})`);
     }
 
     return conditions.length > 0 ? conditions.join(" AND ") : undefined;
@@ -131,8 +169,26 @@ export class CachedSearchService {
    * Build sort array
    */
   private buildSort(filters?: SearchFilters): string[] | undefined {
-    // Default: sort by relevance, then rating, then review count
-    return ["rating:desc", "reviewCount:desc"];
+    if (!filters?.sortBy) {
+      // Default: sort by relevance, then rating, then review count
+      return ["_rankingScore:desc", "rating:desc", "reviewCount:desc"];
+    }
+
+    switch (filters.sortBy) {
+      case "price_asc":
+        return ["price:asc"];
+      case "price_desc":
+        return ["price:desc"];
+      case "rating":
+        return ["rating:desc", "reviewCount:desc"];
+      case "newest":
+        return ["lastUpdated:desc"];
+      case "popular":
+        return ["reviewCount:desc", "rating:desc"];
+      case "relevance":
+      default:
+        return ["_rankingScore:desc", "rating:desc", "reviewCount:desc"];
+    }
   }
 
   /**
