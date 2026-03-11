@@ -27,11 +27,14 @@ export class RealtimeSearchService {
 
     try {
       // Call Apify e-commerce scraping tool
-      const apifyResponse = await this.apifyClient.searchAmazon(query, {
-        limit,
-        page,
+      const apifyResponse = await this.apifyClient.searchAmazon(
+        query,
         filters,
-      });
+        {
+          limit,
+          page,
+        },
+      );
 
       // Normalize results
       const normalizedProducts = this.normalization.normalizeAndValidate(

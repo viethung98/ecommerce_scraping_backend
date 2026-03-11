@@ -1,3 +1,4 @@
+import { SearchFilters } from "@/common/interfaces";
 import { Injectable, Logger } from "@nestjs/common";
 import { ApifyClient } from "apify-client";
 import { AppConfigService } from "../config/app-config.service";
@@ -48,10 +49,10 @@ export class ApifyClientService {
    */
   async searchAmazon(
     query: string,
+    filters: SearchFilters,
     options?: {
       limit?: number;
       page?: number;
-      filters?: any;
     },
   ): Promise<{
     success: boolean;
@@ -60,11 +61,11 @@ export class ApifyClientService {
     source: string;
   }> {
     try {
-      const { limit = 20, page = 1, filters } = options || {};
-
+      const { limit = 20, page = 1 } = options || {};
+      const queryWithFilters = this.buildQueryWithFilters(query, filters);
       // Prepare input for Apify actor
       const input: ApifySearchInput = {
-        keyword: query,
+        keyword: queryWithFilters,
         marketplaces: ["www.amazon.com"],
         maxProductResults: limit,
         countryCode: "vn",
@@ -101,6 +102,32 @@ export class ApifyClientService {
       this.logger.error(`Apify search failed: ${error.message}`, error.stack);
       throw new Error(`Apify search failed: ${error.message}`);
     }
+  }
+
+  async buildQueryWithFilters(
+    query: string,
+    filters: SearchFilters,
+  ): Promise<string> {
+    let modifiedQuery = query;
+
+    // Add category filter to query
+    if (filters.category) {
+      modifiedQuery += ` in category ${filters.category}`;
+    }
+
+    if (filters.brand) {
+      modifiedQuery += ` from brand ${filters.brand}`;
+    }
+
+    // Add price range filter to query
+    if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+      modifiedQuery += ` with price between ${filters.minPrice} and ${filters.maxPrice}`;
+    } else if (filters.minPrice !== undefined) {
+      modifiedQuery += ` with price greater than ${filters.minPrice}`;
+    } else if (filters.maxPrice !== undefined) {
+      modifiedQuery += ` with price less than ${filters.maxPrice}`;
+    }
+    return modifiedQuery;
   }
 
   /**

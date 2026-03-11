@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { BrowserUse } from "browser-use-sdk";
-import { BrowserUseSearchResponse } from "../common/interfaces";
+import { BrowserUseSearchResponse, SearchFilters } from "../common/interfaces";
 import { AppConfigService } from "../config/app-config.service";
 
 @Injectable()
@@ -19,6 +19,7 @@ export class BrowserUseClientService {
    */
   async searchAmazon(
     query: string,
+    filters?: SearchFilters,
     options?: {
       maxResults?: number;
       page?: number;

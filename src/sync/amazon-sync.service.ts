@@ -70,9 +70,13 @@ export class AmazonSyncService {
         try {
           this.logger.log(`Scraping query: "${query}"`);
 
-          const response = await this.browserUseClient.searchAmazon(query, {
-            maxResults: 50,
-          });
+          const response = await this.browserUseClient.searchAmazon(
+            query,
+            {},
+            {
+              maxResults: 50,
+            },
+          );
           const normalized = this.normalization.normalizeAndValidate(
             response.data,
           );
