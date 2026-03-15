@@ -1,6 +1,14 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
-import { OrderService } from "./order.service";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { CheckoutDto } from "./dto/order.dto";
+import { OrderService } from "./order.service";
 
 @Controller("")
 export class OrderController {

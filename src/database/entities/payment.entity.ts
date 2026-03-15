@@ -26,14 +26,14 @@ export class PaymentEntity {
   @Column({ length: 100 })
   userId: string;
 
-  /** USDC amount (6 decimals on Sui) */
+  /** DOT amount */
   @Column({ type: "decimal", precision: 18, scale: 6 })
   amount: number;
 
-  @Column({ length: 20, default: "USDC" })
+  @Column({ length: 20, default: "DOT" })
   token: string;
 
-  @Column({ length: 20, default: "sui" })
+  @Column({ length: 20, default: "polkadot" })
   network: string;
 
   @Column({ length: 255, nullable: true })
@@ -42,7 +42,7 @@ export class PaymentEntity {
   @Column({ length: 255, nullable: true })
   senderAddress: string;
 
-  /** Sui transaction digest */
+  /** Polkadot extrinsic hash */
   @Column({ length: 255, nullable: true, unique: true })
   txHash: string;
 

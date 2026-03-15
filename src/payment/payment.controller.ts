@@ -1,9 +1,16 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from "@nestjs/common";
-import { PaymentService } from "./payment.service";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from "@nestjs/common";
 import {
   GeneratePaymentRequestDto,
   PaymentWebhookDto,
 } from "./dto/payment.dto";
+import { PaymentService } from "./payment.service";
 
 @Controller("payment")
 export class PaymentController {
@@ -11,7 +18,7 @@ export class PaymentController {
 
   /**
    * POST /api/payment/request
-   * Generate a Sui USDC payment request for a given order
+   * Generate a Polkadot payment request for a given order
    */
   @Post("request")
   generateRequest(@Body() dto: GeneratePaymentRequestDto) {
@@ -20,7 +27,7 @@ export class PaymentController {
 
   /**
    * POST /api/payment/webhook
-   * Called by frontend after Sui transaction is signed
+   * Called by frontend after Polkadot payment extrinsic is submitted
    */
   @Post("webhook")
   handleWebhook(@Body() dto: PaymentWebhookDto) {

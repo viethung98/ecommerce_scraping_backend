@@ -10,10 +10,12 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { RequirePayment } from "../paywall/require-payment.decorator";
 import { ChatService } from "./chat.service";
 import { SendMessageDto } from "./dto/chat.dto";
 
 @Controller("chat")
+@RequirePayment()
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 

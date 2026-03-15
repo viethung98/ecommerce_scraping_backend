@@ -13,11 +13,8 @@ export class PaymentWebhookDto {
   payment_id: string;
 
   @IsString()
-  tx_hash: string;
+  block_hash: string;
 
   @IsEnum(["confirmed", "failed"])
   status: "confirmed" | "failed";
-
-  @IsString()
-  sender_address: string;
 }

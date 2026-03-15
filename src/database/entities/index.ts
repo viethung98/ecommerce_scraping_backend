@@ -9,3 +9,4 @@ export * from "./product.entity";
 export * from "./sync-job.entity";
 export * from "./user-interaction.entity";
 export * from "./user-profile.entity";
+

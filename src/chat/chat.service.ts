@@ -1,21 +1,15 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import OpenAI from "openai";
 import { Repository } from "typeorm";
-import { AppConfigService } from "../config/app-config.service";
-import { ChatMessage, ChatSessionEntity } from "../database/entities/chat-session.entity";
 import { NormalizedProduct } from "../common/interfaces";
-import { HybridOrchestratorService } from "../orchestrator/hybrid-orchestrator.service";
+import { AppConfigService } from "../config/app-config.service";
 import {
-  ChatResponse,
-  ProductCard,
-  SendMessageDto,
-} from "./dto/chat.dto";
+  ChatMessage,
+  ChatSessionEntity,
+} from "../database/entities/chat-session.entity";
+import { HybridOrchestratorService } from "../orchestrator/hybrid-orchestrator.service";
+import { ChatResponse, ProductCard, SendMessageDto } from "./dto/chat.dto";
 
 /** Parsed args from the search_products tool call */
 interface SearchToolArgs {
@@ -148,7 +142,9 @@ Keep responses concise and focused. Do not ask multiple questions at once.`;
       // Process each tool call
       for (const toolCall of assistantMessage.tool_calls) {
         if (toolCall.function.name === "search_products") {
-          const args = JSON.parse(toolCall.function.arguments) as SearchToolArgs;
+          const args = JSON.parse(
+            toolCall.function.arguments,
+          ) as SearchToolArgs;
           this.logger.log(`Searching products: ${JSON.stringify(args)}`);
 
           try {
@@ -195,7 +191,11 @@ Keep responses concise and focused. Do not ask multiple questions at once.`;
               role: "tool",
               toolCallId: toolCall.id,
               toolName: toolCall.function.name,
-              content: JSON.stringify({ error: "Search failed", count: 0, products: [] }),
+              content: JSON.stringify({
+                error: "Search failed",
+                count: 0,
+                products: [],
+              }),
               timestamp: new Date().toISOString(),
             };
             session.messages = [...session.messages, errorMsg];
@@ -228,9 +228,7 @@ Keep responses concise and focused. Do not ask multiple questions at once.`;
         session_id: session.id,
         type: "ai_products",
         message: assistantMessage.content ?? undefined,
-        products: productsFound.slice(0, 5).map((p) =>
-          this.toProductCard(p),
-        ),
+        products: productsFound.slice(0, 5).map((p) => this.toProductCard(p)),
       };
     }
 

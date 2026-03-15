@@ -99,27 +99,58 @@ export class AppConfigService {
     return this.configService.get<string>("FULL_SYNC_CRON", "0 0 * * *");
   }
 
-  // Sui / USDC Payment
-  get suiRpcUrl(): string {
+  // Polkadot payment
+  get polkadotNetwork(): string {
+    return this.configService.get<string>("POLKADOT_NETWORK", "polkadot");
+  }
+
+  get polkadotMerchantAddress(): string {
+    return this.configService.get<string>("POLKADOT_MERCHANT_ADDRESS", "");
+  }
+
+  get polkadotPaymentAmountPlanck(): string {
     return this.configService.get<string>(
-      "SUI_RPC_URL",
-      "https://fullnode.mainnet.sui.io:443",
+      "POLKADOT_PAYMENT_AMOUNT_PLANCK",
+      "1000000000",
     );
   }
 
-  get suiNetwork(): string {
-    return this.configService.get<string>("SUI_NETWORK", "sui:mainnet");
+  get polkadotCurrencySymbol(): string {
+    return this.configService.get<string>("POLKADOT_CURRENCY_SYMBOL", "DOT");
   }
 
-  get suiMerchantWallet(): string {
-    return this.configService.get<string>("SUI_MERCHANT_WALLET", "");
+  // x402-style paywall
+  get x402Enabled(): boolean {
+    return this.asBoolean(
+      this.configService.get<string>("X402_ENABLED", "true"),
+    );
   }
 
-  /**
-   * Full Sui coin type for USDC, e.g.
-   * 0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN
-   */
-  get suiUsdcCoinType(): string {
-    return this.configService.get<string>("SUI_USDC_COIN_TYPE", "");
+  get x402RequireSmoldotHealthy(): boolean {
+    return this.asBoolean(
+      this.configService.get<string>("X402_REQUIRE_SMOLDOT_HEALTHY", "false"),
+    );
+  }
+
+  get x402SmoldotChainSpecPath(): string {
+    return this.configService.get<string>("X402_SMOLDOT_CHAIN_SPEC_PATH", "");
+  }
+
+  get x402SmoldotHealthTimeoutMs(): number {
+    return this.configService.get<number>(
+      "X402_SMOLDOT_HEALTH_TIMEOUT_MS",
+      4000,
+    );
+  }
+
+  get x402SmoldotHealthCacheMs(): number {
+    return this.configService.get<number>(
+      "X402_SMOLDOT_HEALTH_CACHE_MS",
+      30000,
+    );
+  }
+
+  private asBoolean(value: string): boolean {
+    return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
   }
 }

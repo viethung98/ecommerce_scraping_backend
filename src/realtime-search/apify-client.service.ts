@@ -104,10 +104,7 @@ export class ApifyClientService {
     }
   }
 
-  async buildQueryWithFilters(
-    query: string,
-    filters: SearchFilters,
-  ): Promise<string> {
+  buildQueryWithFilters(query: string, filters: SearchFilters): string {
     let modifiedQuery = query;
 
     // Add category filter to query
