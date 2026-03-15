@@ -28,6 +28,9 @@
     "@nestjs/platform-express": "^10.2.10",
     "@nestjs/schedule": "^4.0.0",
     "@nestjs/typeorm": "^10.0.1",
+    "@polkadot/types": "^16.5.4",
+    "@polkadot/util": "^14.0.1",
+    "@polkadot/util-crypto": "^14.0.1",
     "apify-client": "^2.22.2",
     "axios": "^1.6.2",
     "browser-use-sdk": "^3.1.0",
@@ -41,6 +44,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^5.0.5",
     "rxjs": "^7.8.1",
+    "smoldot": "^2.0.40",
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
