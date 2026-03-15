@@ -1,11 +1,10 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 import { SearchResponseDto } from "../common/dto/response.dto";
 import { SearchQueryDto } from "../common/dto/search.dto";
-import { RequirePayment } from "../paywall/require-payment.decorator";
 import { RealtimeSearchService } from "./realtime-search.service";
 
 @Controller("search/realtime")
-@RequirePayment()
+// @RequirePayment()
 export class RealtimeSearchController {
   constructor(private readonly realtimeSearch: RealtimeSearchService) {}
 

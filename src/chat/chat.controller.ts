@@ -15,7 +15,7 @@ import { ChatService } from "./chat.service";
 import { SendMessageDto } from "./dto/chat.dto";
 
 @Controller("chat")
-@RequirePayment()
+// @RequirePayment()
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
