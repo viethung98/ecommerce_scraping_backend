@@ -10,7 +10,7 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { RequirePayment } from "../paywall/require-payment.decorator";
+import { ApiResponse } from "../common/dto/response.dto";
 import { ChatService } from "./chat.service";
 import { SendMessageDto } from "./dto/chat.dto";
 
@@ -24,26 +24,35 @@ export class ChatController {
    * Send a message and receive AI response
    */
   @Post()
-  async sendMessage(@Body() dto: SendMessageDto) {
-    return this.chatService.sendMessage(dto);
+  async sendMessage(@Body() dto: SendMessageDto): Promise<ApiResponse<any>> {
+    const result = await this.chatService.sendMessage(dto);
+    return ApiResponse.success(result, 200, "Message sent successfully");
   }
 
   /**
    * GET /api/chat/history?session_id=...
    */
   @Get("history")
-  async getHistory(@Query("session_id", ParseUUIDPipe) sessionId: string) {
-    return this.chatService.getHistory(sessionId);
+  async getHistory(
+    @Query("session_id", ParseUUIDPipe) sessionId: string,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.chatService.getHistory(sessionId);
+    return ApiResponse.success(
+      result,
+      200,
+      "Chat history retrieved successfully",
+    );
   }
 
   /**
    * DELETE /api/chat/:session_id
    */
   @Delete(":session_id")
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async deleteSession(
     @Param("session_id", ParseUUIDPipe) sessionId: string,
-  ): Promise<void> {
-    return this.chatService.deleteSession(sessionId);
+  ): Promise<ApiResponse<null>> {
+    await this.chatService.deleteSession(sessionId);
+    return ApiResponse.success(null, 200, "Chat session deleted successfully");
   }
 }

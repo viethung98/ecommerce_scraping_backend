@@ -9,6 +9,7 @@ import {
   Post,
   Put,
 } from "@nestjs/common";
+import { ApiResponse } from "../common/dto/response.dto";
 import { CartService } from "./cart.service";
 import { AddCartItemDto, UpdateCartItemDto } from "./dto/cart.dto";
 
@@ -20,28 +21,34 @@ export class CartController {
    * GET /api/cart/:userId
    */
   @Get(":userId")
-  getCart(@Param("userId") userId: string) {
-    return this.cartService.getCart(userId);
+  async getCart(@Param("userId") userId: string): Promise<ApiResponse<any>> {
+    const cart = await this.cartService.getCart(userId);
+    return ApiResponse.success(cart, 200, "Cart retrieved successfully");
   }
 
   /**
    * POST /api/cart/:userId/items
    */
   @Post(":userId/items")
-  addItem(@Param("userId") userId: string, @Body() dto: AddCartItemDto) {
-    return this.cartService.addItem(userId, dto);
+  async addItem(
+    @Param("userId") userId: string,
+    @Body() dto: AddCartItemDto,
+  ): Promise<ApiResponse<any>> {
+    const cart = await this.cartService.addItem(userId, dto);
+    return ApiResponse.success(cart, 201, "Item added to cart successfully");
   }
 
   /**
    * PUT /api/cart/:userId/items/:productId
    */
   @Put(":userId/items/:productId")
-  updateItem(
+  async updateItem(
     @Param("userId") userId: string,
     @Param("productId") productId: string,
     @Body() dto: UpdateCartItemDto,
-  ) {
-    return this.cartService.updateItem(userId, productId, dto);
+  ): Promise<ApiResponse<any>> {
+    const cart = await this.cartService.updateItem(userId, productId, dto);
+    return ApiResponse.success(cart, 200, "Cart item updated successfully");
   }
 
   /**
@@ -49,19 +56,25 @@ export class CartController {
    */
   @Delete(":userId/items/:productId")
   @HttpCode(HttpStatus.OK)
-  removeItem(
+  async removeItem(
     @Param("userId") userId: string,
     @Param("productId") productId: string,
-  ) {
-    return this.cartService.removeItem(userId, productId);
+  ): Promise<ApiResponse<any>> {
+    const cart = await this.cartService.removeItem(userId, productId);
+    return ApiResponse.success(
+      cart,
+      200,
+      "Item removed from cart successfully",
+    );
   }
 
   /**
    * DELETE /api/cart/:userId
    */
   @Delete(":userId")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async clearCart(@Param("userId") userId: string): Promise<void> {
-    return this.cartService.clearCart(userId);
+  @HttpCode(HttpStatus.OK)
+  async clearCart(@Param("userId") userId: string): Promise<ApiResponse<null>> {
+    await this.cartService.clearCart(userId);
+    return ApiResponse.success(null, 200, "Cart cleared successfully");
   }
 }

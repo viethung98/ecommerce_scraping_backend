@@ -7,6 +7,7 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { ApiResponse } from "../common/dto/response.dto";
 import { CheckoutDto } from "./dto/order.dto";
 import { OrderService } from "./order.service";
 
@@ -19,23 +20,28 @@ export class OrderController {
    * Create a new order from cart
    */
   @Post("checkout")
-  checkout(@Body() dto: CheckoutDto) {
-    return this.orderService.checkout(dto);
+  async checkout(@Body() dto: CheckoutDto): Promise<ApiResponse<any>> {
+    const result = await this.orderService.checkout(dto);
+    return ApiResponse.success(result, 201, "Order created successfully");
   }
 
   /**
    * GET /api/orders?user_id=...
    */
   @Get("orders")
-  getOrders(@Query("user_id") userId: string) {
-    return this.orderService.getOrdersByUser(userId);
+  async getOrders(@Query("user_id") userId: string): Promise<ApiResponse<any>> {
+    const orders = await this.orderService.getOrdersByUser(userId);
+    return ApiResponse.success(orders, 200, "Orders retrieved successfully");
   }
 
   /**
    * GET /api/orders/:orderId
    */
   @Get("orders/:orderId")
-  getOrder(@Param("orderId", ParseUUIDPipe) orderId: string) {
-    return this.orderService.getOrderById(orderId);
+  async getOrder(
+    @Param("orderId", ParseUUIDPipe) orderId: string,
+  ): Promise<ApiResponse<any>> {
+    const order = await this.orderService.getOrderById(orderId);
+    return ApiResponse.success(order, 200, "Order retrieved successfully");
   }
 }

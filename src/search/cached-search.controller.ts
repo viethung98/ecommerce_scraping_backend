@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 import { AdvancedSearchDto } from "../common/dto/advanced-search.dto";
-import { SearchResponseDto } from "../common/dto/response.dto";
+import { ApiResponse, SearchResponseDto } from "../common/dto/response.dto";
 import { CachedSearchService } from "./cached-search.service";
 
 @Controller("search/cached")
@@ -8,7 +8,9 @@ export class CachedSearchController {
   constructor(private readonly cachedSearch: CachedSearchService) {}
 
   @Get()
-  async search(@Query() query: AdvancedSearchDto): Promise<SearchResponseDto> {
+  async search(
+    @Query() query: AdvancedSearchDto,
+  ): Promise<ApiResponse<SearchResponseDto>> {
     const filters = {
       category: query.category,
       brand: query.brand,
@@ -33,38 +35,41 @@ export class CachedSearchController {
       query.limit,
     );
 
-    return result;
+    return ApiResponse.success(result, 200, "Search completed successfully");
   }
 
   @Get("product/:asin")
-  async getProduct(@Param("asin") asin: string) {
+  async getProduct(@Param("asin") asin: string): Promise<ApiResponse<any>> {
     const product = await this.cachedSearch.getProductByAsin(asin);
 
-    return {
-      success: true,
-      data: product,
-      source: "cached",
-    };
+    return ApiResponse.success(
+      { data: product, source: "cached" },
+      200,
+      "Product retrieved successfully",
+    );
   }
 
   @Get("health")
-  async health() {
+  async health(): Promise<ApiResponse<any>> {
     const available = await this.cachedSearch.isAvailable();
 
-    return {
+    const healthData = {
       status: available ? "healthy" : "unavailable",
       service: "cached-search",
       timestamp: new Date().toISOString(),
     };
+
+    return ApiResponse.success(healthData, 200, "Health check completed");
   }
 
   @Get("stats")
-  async stats() {
+  async stats(): Promise<ApiResponse<any>> {
     const stats = await this.cachedSearch.getStats();
 
-    return {
-      success: true,
-      data: stats,
-    };
+    return ApiResponse.success(
+      { data: stats },
+      200,
+      "Stats retrieved successfully",
+    );
   }
 }

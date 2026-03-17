@@ -56,7 +56,10 @@ export class ApifyClientService {
     },
   ): Promise<{
     success: boolean;
-    data: any[];
+    data: {
+      items: any[];
+      total?: number;
+    };
     timestamp: string;
     source: string;
   }> {
@@ -81,12 +84,9 @@ export class ApifyClientService {
       // Start the actor run and wait for completion
       const run = await this.client.actor(this.actorId).call(input);
 
-      this.logger.log(`Apify run started: ${run.id}`);
-
       // Get dataset items directly (SDK handles waiting)
       const dataset = await this.client.dataset(run.defaultDatasetId || run.id);
       const results = await dataset.listItems();
-      console.log("Apify dataset results:", JSON.stringify(results));
 
       this.logger.log(
         `Apify search completed: ${results.items.length} results`,
@@ -94,7 +94,7 @@ export class ApifyClientService {
 
       return {
         success: true,
-        data: results.items,
+        data: results,
         timestamp: new Date().toISOString(),
         source: "apify",
       };
@@ -116,13 +116,21 @@ export class ApifyClientService {
       modifiedQuery += ` from brand ${filters.brand}`;
     }
 
+    if (filters.color) {
+      modifiedQuery += ` with color ${filters.color}`;
+    }
+
+    if (filters.size) {
+      modifiedQuery += ` with size ${filters.size}`;
+    }
+
     // Add price range filter to query
     if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
-      modifiedQuery += ` with price between ${filters.minPrice} and ${filters.maxPrice}`;
+      modifiedQuery += ` with offer price between ${filters.minPrice}$ and ${filters.maxPrice}$`;
     } else if (filters.minPrice !== undefined) {
-      modifiedQuery += ` with price greater than ${filters.minPrice}`;
+      modifiedQuery += ` with offer price greater than ${filters.minPrice}$`;
     } else if (filters.maxPrice !== undefined) {
-      modifiedQuery += ` with price less than ${filters.maxPrice}`;
+      modifiedQuery += ` with offer price less than ${filters.maxPrice}$`;
     }
     return modifiedQuery;
   }

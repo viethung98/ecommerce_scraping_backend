@@ -126,27 +126,20 @@ export class AppConfigService {
     );
   }
 
-  get x402RequireSmoldotHealthy(): boolean {
+  get x402RequireHealthy(): boolean {
     return this.asBoolean(
-      this.configService.get<string>("X402_REQUIRE_SMOLDOT_HEALTHY", "false"),
+      this.configService.get<string>("X402_REQUIRE_HEALTHY", "false"),
     );
   }
 
-  get x402SmoldotChainSpecPath(): string {
-    return this.configService.get<string>("X402_SMOLDOT_CHAIN_SPEC_PATH", "");
+  get scanApiKey(): string {
+    return this.configService.get<string>("SCAN_API_KEY", "");
   }
 
-  get x402SmoldotHealthTimeoutMs(): number {
-    return this.configService.get<number>(
-      "X402_SMOLDOT_HEALTH_TIMEOUT_MS",
-      4000,
-    );
-  }
-
-  get x402SmoldotHealthCacheMs(): number {
-    return this.configService.get<number>(
-      "X402_SMOLDOT_HEALTH_CACHE_MS",
-      30000,
+  get scanBaseUrl(): string {
+    return this.configService.get<string>(
+      "SCAN_BASE_URL",
+      "https://api.routescan.io/v2/network/testnet/evm/420420417/etherscan/api",
     );
   }
 

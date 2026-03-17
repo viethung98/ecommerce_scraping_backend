@@ -63,6 +63,8 @@ export interface SearchFilters {
   minReviewCount?: number;
   available?: boolean;
   fulfillment?: string;
+  color?: string;
+  size?: string;
   // Advanced filters
   brands?: string[];
   categories?: string[];

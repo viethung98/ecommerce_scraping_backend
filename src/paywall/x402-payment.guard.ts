@@ -1,21 +1,21 @@
 import {
-    CanActivate,
-    ExecutionContext,
-    Injectable,
-    ServiceUnavailableException,
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Request } from "express";
 import { AppConfigService } from "../config/app-config.service";
 import { REQUIRE_PAYMENT_METADATA_KEY } from "./require-payment.decorator";
-import { X402SmoldotService } from "./x402-smoldot.service";
+import { ScanService } from "./scan.service";
 
 @Injectable()
 export class X402PaymentGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly config: AppConfigService,
-    private readonly smoldotService: X402SmoldotService,
+    private readonly scanService: ScanService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,8 +32,7 @@ export class X402PaymentGuard implements CanActivate {
       return true;
     }
 
-    const healthy = await this.smoldotService.assertHealthy();
-    if (!healthy && this.config.x402RequireSmoldotHealthy) {
+    if (!this.scanService.isEnabled()) {
       throw new ServiceUnavailableException(
         "Payment network validation is currently unavailable",
       );
@@ -51,7 +50,7 @@ export class X402PaymentGuard implements CanActivate {
       });
     }
 
-    const proof = await this.smoldotService.verifyPaymentProof({
+    const proof = await this.scanService.verifyPaymentProof({
       blockHash: parsed.blockHash,
       recipient: this.config.polkadotMerchantAddress,
       minAmountPlanck: this.config.polkadotPaymentAmountPlanck,
@@ -124,7 +123,7 @@ export class X402PaymentGuard implements CanActivate {
         recipient: this.config.polkadotMerchantAddress,
         amount: this.config.polkadotPaymentAmountPlanck,
         currency: this.config.polkadotCurrencySymbol,
-        verifier: "smoldot",
+        verifier: "routescan",
         instructions:
           "Submit a Balances.transfer or transfer_keep_alive to the merchant, then retry with X-Payment: block=0x...",
       },

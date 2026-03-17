@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from "@nestjs/common";
-import { SearchResponseDto } from "../common/dto/response.dto";
+import { ApiResponse, SearchResponseDto } from "../common/dto/response.dto";
 import { SearchQueryDto } from "../common/dto/search.dto";
 import { HybridOrchestratorService } from "./hybrid-orchestrator.service";
 
@@ -11,7 +11,9 @@ export class HybridOrchestratorController {
    * Main search endpoint with smart routing
    */
   @Get()
-  async search(@Query() query: SearchQueryDto): Promise<SearchResponseDto> {
+  async search(
+    @Query() query: SearchQueryDto,
+  ): Promise<ApiResponse<SearchResponseDto>> {
     const filters = {
       category: query.category,
       brand: query.brand,
@@ -28,35 +30,38 @@ export class HybridOrchestratorController {
       query.forceRealtime,
     );
 
-    return result;
+    return ApiResponse.success(result, 200, "Search completed successfully");
   }
 
   /**
    * Get system status
    */
   @Get("status")
-  async getStatus() {
+  async getStatus(): Promise<ApiResponse<any>> {
     const status = await this.orchestrator.getStatus();
 
-    return {
-      success: true,
-      data: status,
-      timestamp: new Date().toISOString(),
-    };
+    return ApiResponse.success(
+      { data: status, timestamp: new Date().toISOString() },
+      200,
+      "System status retrieved successfully",
+    );
   }
 
   /**
    * Get popular queries
    */
   @Get("popular")
-  async getPopularQueries(@Query("limit") limit?: number) {
+  async getPopularQueries(
+    @Query("limit") limit?: number,
+  ): Promise<ApiResponse<any>> {
     const popular = this.orchestrator.getPopularQueries(
       limit ? Number(limit) : 10,
     );
 
-    return {
-      success: true,
-      data: popular,
-    };
+    return ApiResponse.success(
+      { data: popular },
+      200,
+      "Popular queries retrieved successfully",
+    );
   }
 }

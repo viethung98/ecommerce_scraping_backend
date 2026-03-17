@@ -38,18 +38,17 @@ export class RealtimeSearchService {
 
       // Normalize results
       const normalizedProducts = this.normalization.normalizeAndValidate(
-        apifyResponse.data,
+        apifyResponse.data.items,
       );
-
-      // Apply additional filters
-      const filteredProducts = this.applyFilters(normalizedProducts, filters);
+      // // Apply additional filters
+      // const filteredProducts = this.applyFilters(normalizedProducts, filters);
 
       const executionTime = Date.now() - startTime;
-      const total = filteredProducts.length;
+      const total = apifyResponse.data.total;
       const totalPage = Math.ceil(total / limit);
 
       return {
-        products: filteredProducts.slice(0, limit),
+        products: normalizedProducts,
         total,
         page,
         limit,

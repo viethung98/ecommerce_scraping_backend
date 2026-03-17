@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from "@nestjs/common";
+import { ApiResponse } from "../common/dto/response.dto";
 import {
   GeneratePaymentRequestDto,
   PaymentWebhookDto,
@@ -21,8 +22,15 @@ export class PaymentController {
    * Generate a Polkadot payment request for a given order
    */
   @Post("request")
-  generateRequest(@Body() dto: GeneratePaymentRequestDto) {
-    return this.paymentService.generatePaymentRequest(dto);
+  async generateRequest(
+    @Body() dto: GeneratePaymentRequestDto,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.paymentService.generatePaymentRequest(dto);
+    return ApiResponse.success(
+      result,
+      200,
+      "Payment request generated successfully",
+    );
   }
 
   /**
@@ -30,8 +38,15 @@ export class PaymentController {
    * Called by frontend after Polkadot payment extrinsic is submitted
    */
   @Post("webhook")
-  handleWebhook(@Body() dto: PaymentWebhookDto) {
-    return this.paymentService.handleWebhook(dto);
+  async handleWebhook(
+    @Body() dto: PaymentWebhookDto,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.paymentService.handleWebhook(dto);
+    if (result.success) {
+      return ApiResponse.success(result, 200, result.message);
+    } else {
+      return ApiResponse.error(400, result.message);
+    }
   }
 
   /**
@@ -39,7 +54,33 @@ export class PaymentController {
    * Check payment status
    */
   @Get("verify/:paymentId")
-  verifyPayment(@Param("paymentId", ParseUUIDPipe) paymentId: string) {
-    return this.paymentService.getPaymentStatus(paymentId);
+  async verifyPayment(
+    @Param("paymentId", ParseUUIDPipe) paymentId: string,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.paymentService.getPaymentStatus(paymentId);
+    return ApiResponse.success(
+      result,
+      200,
+      "Payment status retrieved successfully",
+    );
+  }
+
+  /**
+   * GET /api/payment/transaction/:blockHash
+   * Get transaction details from block hash
+   */
+  @Get("transaction/:blockHash")
+  async getTransactionDetails(
+    @Param("blockHash") blockHash: string,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.paymentService.getTransactionDetails(blockHash);
+    if (result.success) {
+      return ApiResponse.success(result.data, result.code || 200, result.msg);
+    } else {
+      return ApiResponse.error(
+        result.code || 500,
+        result.msg || "Failed to get transaction details",
+      );
+    }
   }
 }

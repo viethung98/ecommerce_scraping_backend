@@ -9,7 +9,7 @@ import { Repository } from "typeorm";
 import { AppConfigService } from "../config/app-config.service";
 import { PaymentEntity } from "../database/entities/payment.entity";
 import { OrderService } from "../order/order.service";
-import { X402SmoldotService } from "../paywall/x402-smoldot.service";
+import { ScanService } from "../paywall/scan.service";
 import {
   GeneratePaymentRequestDto,
   PaymentWebhookDto,
@@ -27,7 +27,7 @@ export class PaymentService {
     private readonly paymentRepo: Repository<PaymentEntity>,
     private readonly orderService: OrderService,
     private readonly config: AppConfigService,
-    private readonly smoldotService: X402SmoldotService,
+    private readonly scanService: ScanService,
   ) {}
 
   /**
@@ -188,10 +188,10 @@ export class PaymentService {
   }
 
   /**
-   * Verify Polkadot payment proof via smoldot.
+   * Verify Polkadot payment proof via Routescan API.
    */
   private async verifyOnChain(blockHash: string): Promise<void> {
-    const proof = await this.smoldotService.verifyPaymentProof({
+    const proof = await this.scanService.verifyPaymentProof({
       blockHash,
       recipient: this.config.polkadotMerchantAddress,
       minAmountPlanck: this.config.polkadotPaymentAmountPlanck,
@@ -199,6 +199,59 @@ export class PaymentService {
 
     if (!proof.ok) {
       throw new Error(proof.reason || "Unable to verify payment proof");
+    }
+  }
+
+  /**
+   * Get transaction details from block hash
+   */
+  async getTransactionDetails(txHash: string): Promise<{
+    success: boolean;
+    msg?: string;
+    code?: number;
+    data?: {
+      hash: string;
+      amount: string;
+      from: string;
+      to: string;
+      blockNumber: number;
+      input?: string;
+    };
+  }> {
+    try {
+      // Use the scan service to get transaction details
+      const detail = await this.scanService.getTransactionDetail(txHash);
+      if (!detail) {
+        this.logger.debug(`No transaction found for tx hash: ${txHash}`);
+        return {
+          success: true,
+          msg: "Transaction not found",
+          code: 404,
+          data: null,
+        };
+      }
+      return {
+        success: true,
+        data: {
+          hash: detail.hash,
+          amount: detail.value,
+          from: detail.from,
+          to: detail.to,
+          blockNumber: detail.blockNumber,
+          input: detail.input,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get transaction details for tx hash ${txHash}:`,
+        error,
+      );
+      return {
+        success: false,
+        code: 500,
+        msg: error?.message || "Unable to get transaction details",
+        data: null,
+      };
     }
   }
 }

@@ -23,6 +23,14 @@ export class SearchQueryDto extends PaginationQueryDto {
   brand?: string;
 
   @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   @Min(0)
