@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
+import { AppConfigService } from '../config/app-config.service';
 import { RedisService } from '../common/redis.service';
 import { TransactionEntity, TransactionStatus } from '../database/entities';
 import { ScanService } from '../paywall/scan.service';
@@ -19,6 +20,7 @@ export class TransactionService {
 		private readonly scanService: ScanService,
 		private readonly redisService: RedisService,
 		private readonly httpService: HttpService,
+		private readonly configService: AppConfigService,
 	) {}
 
 	async verifyTransaction(
@@ -108,14 +110,13 @@ export class TransactionService {
 			await this.transactionRepo.save(transaction);
 			console.log('Transaction verified and saved:', transaction);
 
-			// // Call downstream service (idempotent)
-			// await this.callDownstreamService({
-			// 	userId,
-			// 	receiver: txDetails.to,
-			//  originAmount: txDetails.value,
-			// 	amount: parseFloat(txDetails.amount),
-			// 	txHash,
-			// });
+			// Call downstream service (idempotent)
+			await this.callDownstreamService({
+				userId,
+				address: txDetails.to,
+				amountPAS: txDetails.value,
+				txHash,
+			});
 
 			return ApiResponse.success(
 				{
@@ -166,8 +167,8 @@ export class TransactionService {
 
 	private async callDownstreamService(data: {
 		userId: string;
-		receiver: string;
-		amount: number;
+		address: string;
+		amountPAS: string;
 		txHash: string;
 	}): Promise<void> {
 		try {
@@ -183,24 +184,35 @@ export class TransactionService {
 				return;
 			}
 
-			// Call downstream service
+			const baseUrl = this.configService.comagentBaseUrl;
+			const webhookSecret = this.configService.depositWebhookSecret;
+			const url = `${baseUrl}/api/deposit/${data.userId}/${data.address}/confirm`;
+
 			const response = await firstValueFrom(
-				this.httpService.post('http://downstream-service/credit', data, {
-					headers: {
-						'Idempotency-Key': data.txHash,
+				this.httpService.post(
+					url,
+					{
+						amountPAS: parseInt(data.amountPAS),
+						transactionHash: data.txHash,
 					},
-				}),
+					{
+						headers: {
+							'Content-Type': 'application/json',
+							'X-Webhook-Secret': webhookSecret,
+						},
+					},
+				),
 			);
 
 			// Mark as processed
 			await this.redisService.set(idempotencyKey, 'processed', 86400); // 24 hours
 
 			this.logger.log(
-				`Downstream service called successfully for txHash: ${data.txHash}`,
+				`Deposit webhook called successfully for txHash: ${data.txHash}, response: ${JSON.stringify(response.data)}`,
 			);
 		} catch (error) {
 			this.logger.error(
-				`Downstream service call failed: ${error.message}`,
+				`Deposit webhook call failed: ${error.message}`,
 				error.stack,
 			);
 		}
