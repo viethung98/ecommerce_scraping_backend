@@ -156,6 +156,18 @@ export class AppConfigService {
 		);
 	}
 
+	// Comagent
+	get comagentBaseUrl(): string {
+		return this.configService.get<string>(
+			'COMAGENT_BASE_URL',
+			'http://localhost:3001',
+		);
+	}
+
+	get depositWebhookSecret(): string {
+		return this.configService.get<string>('DEPOSIT_WEBHOOK_SECRET', '');
+	}
+
 	private asBoolean(value: string): boolean {
 		return ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
 	}
