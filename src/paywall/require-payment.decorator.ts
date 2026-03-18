@@ -1,6 +1,6 @@
-import { SetMetadata } from "@nestjs/common";
+import { SetMetadata } from '@nestjs/common';
 
-export const REQUIRE_PAYMENT_METADATA_KEY = "require_payment";
+export const REQUIRE_PAYMENT_METADATA_KEY = 'require_payment';
 
 /**
  * Mark endpoint/class as paywalled.
@@ -8,4 +8,4 @@ export const REQUIRE_PAYMENT_METADATA_KEY = "require_payment";
  * - @RequirePayment() on controller: require payment for all controller routes.
  */
 export const RequirePayment = () =>
-  SetMetadata(REQUIRE_PAYMENT_METADATA_KEY, true);
+	SetMetadata(REQUIRE_PAYMENT_METADATA_KEY, true);

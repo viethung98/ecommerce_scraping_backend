@@ -1,20 +1,20 @@
-import { IsEnum, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsString, IsUUID } from 'class-validator';
 
 export class GeneratePaymentRequestDto {
-  @IsUUID()
-  order_id: string;
+	@IsUUID()
+	order_id: string;
 
-  @IsString()
-  user_id: string;
+	@IsString()
+	user_id: string;
 }
 
 export class PaymentWebhookDto {
-  @IsString()
-  payment_id: string;
+	@IsString()
+	payment_id: string;
 
-  @IsString()
-  block_hash: string;
+	@IsString()
+	block_hash: string;
 
-  @IsEnum(["confirmed", "failed"])
-  status: "confirmed" | "failed";
+	@IsEnum(['confirmed', 'failed'])
+	status: 'confirmed' | 'failed';
 }

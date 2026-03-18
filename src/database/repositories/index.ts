@@ -1,2 +1,2 @@
-export * from "./price-history.repository";
-export * from "./product.repository";
+export * from './price-history.repository';
+export * from './product.repository';
