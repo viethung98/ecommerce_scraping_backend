@@ -156,7 +156,7 @@ export class ScanService implements OnModuleInit, OnModuleDestroy {
 			);
 			console.log('Routescan getTransactionByHash response:', response.data);
 
-			if (!response.data?.result || !response.data?.nonce) {
+			if (!response.data?.result || !response.data?.jsonrpc) {
 				console.log(`No transaction found for hash: ${txHash}`);
 				return null;
 			}
