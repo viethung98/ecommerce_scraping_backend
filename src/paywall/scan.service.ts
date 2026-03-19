@@ -156,12 +156,12 @@ export class ScanService implements OnModuleInit, OnModuleDestroy {
 			);
 			console.log('Routescan getTransactionByHash response:', response.data);
 
-			if (!response.data?.result) {
+			if (!response.data?.result || !response.data?.nonce) {
 				console.log(`No transaction found for hash: ${txHash}`);
 				return null;
 			}
 
-			const result = response.data.result
+			const result = response.data.result;
 			const value = convertHexToDecimal(result.value).toString();
 
 			// Convert hex values to readable formats

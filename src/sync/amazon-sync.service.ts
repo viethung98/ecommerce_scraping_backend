@@ -29,7 +29,7 @@ export class AmazonSyncService {
 	/**
 	 * Scheduled price refresh (every 12 hours)
 	 */
-	@Cron(CronExpression.EVERY_12_HOURS)
+	// @Cron(CronExpression.EVERY_12_HOURS)
 	async scheduledPriceRefresh() {
 		this.logger.log('Starting scheduled price refresh...');
 		await this.priceRefreshSync();
@@ -38,7 +38,7 @@ export class AmazonSyncService {
 	/**
 	 * Scheduled full sync (daily at midnight)
 	 */
-	@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+	// @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
 	async scheduledFullSync() {
 		this.logger.log('Starting scheduled full sync...');
 		await this.fullSync(['popular search queries']); // You can customize queries
