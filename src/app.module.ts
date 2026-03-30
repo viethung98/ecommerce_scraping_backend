@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
-	cronConfig,
 	databaseConfig,
 	mppConfig,
 	polkadotConfig,
@@ -34,7 +33,6 @@ import { RealtimeSearchModule } from './realtime-search/realtime-search.module';
 				polkadotConfig,
 				mppConfig,
 				servicesConfig,
-				cronConfig,
 			],
 			validate,
 		}),

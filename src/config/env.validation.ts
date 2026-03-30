@@ -28,22 +28,6 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  DB_HOST: string;
-
-  @IsNumber()
-  @IsOptional()
-  DB_PORT: number;
-
-  @IsString()
-  @IsOptional()
-  DB_USERNAME: string;
-
-  @IsString()
-  @IsOptional()
-  DB_PASSWORD: string;
-
-  @IsString()
-  @IsOptional()
   DB_DATABASE: string;
 
   // Redis
