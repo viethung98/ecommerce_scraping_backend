@@ -26,6 +26,9 @@ export class TransactionEntity {
 	@Index()
 	status: TransactionStatus;
 
+	@Column({ length: 30, default: 'polkadot' })
+	network: string;
+
 	@Column({ length: 100, nullable: true })
 	receiver: string;
 

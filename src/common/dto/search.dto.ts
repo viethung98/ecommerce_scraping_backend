@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-	IsArray,
 	IsBoolean,
 	IsNumber,
 	IsOptional,
@@ -55,30 +54,3 @@ export class SearchQueryDto extends PaginationQueryDto {
 	forceRealtime?: boolean;
 }
 
-export class AiQueryDto {
-	@IsString()
-	query: string;
-
-	@IsOptional()
-	@IsString()
-	userId?: string;
-
-	@IsOptional()
-	@IsArray()
-	@IsString({ each: true })
-	context?: string[];
-}
-
-export class TrackProductDto {
-	@IsString()
-	asin: string;
-
-	@IsOptional()
-	@IsString()
-	userId?: string;
-
-	@IsOptional()
-	@IsNumber()
-	@Type(() => Number)
-	targetPrice?: number;
-}

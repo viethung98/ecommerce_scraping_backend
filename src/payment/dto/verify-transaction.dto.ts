@@ -1,9 +1,9 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class VerifyTransactionRequestDto {
 	@ApiProperty({
-		description: 'The hash of the Polkadot transaction to verify',
+		description: 'The transaction hash to verify',
 		example: '0x123abc...',
 	})
 	@IsString()
@@ -17,6 +17,14 @@ export class VerifyTransactionRequestDto {
 	@IsString()
 	@IsNotEmpty()
 	userId: string;
+
+	@ApiPropertyOptional({
+		description: 'The blockchain network (polkadot, tempo, tempo-testnet)',
+		example: 'tempo-testnet',
+	})
+	@IsOptional()
+	@IsString()
+	network?: string;
 }
 
 

@@ -39,22 +39,3 @@ export class SearchResponseDto extends PaginationResponseDto {
 	executionTime: number;
 }
 
-export class AiQueryResponseDto {
-	message: string;
-	products: NormalizedProduct[];
-	intent: any;
-	suggestions?: string[];
-}
-
-export class HealthResponseDto {
-	status: string;
-	uptime: number;
-	timestamp: string;
-	environment: string;
-	services: {
-		database?: string;
-		search?: string;
-		mcp?: string;
-		apify?: string;
-	};
-}

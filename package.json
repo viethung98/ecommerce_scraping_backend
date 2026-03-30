@@ -36,7 +36,6 @@
 		"@polkadot/util-crypto": "^14.0.1",
 		"apify-client": "^2.22.2",
 		"axios": "^1.6.2",
-		"browser-use-sdk": "^3.1.0",
 		"bullmq": "^5.1.0",
 		"cache-manager-ioredis": "^2.1.0",
 		"class-transformer": "^0.5.1",
@@ -45,13 +44,15 @@
 		"ethers": "^6.16.0",
 		"ioredis": "^5.10.0",
 		"meilisearch": "^0.37.0",
+		"mppx": "^0.4.11",
 		"openai": "^4.20.1",
 		"pg": "^8.11.3",
 		"reflect-metadata": "^0.1.13",
 		"rimraf": "^5.0.5",
 		"rxjs": "^7.8.1",
 		"smoldot": "^2.0.40",
-		"typeorm": "^0.3.17"
+		"typeorm": "^0.3.17",
+		"viem": "^2.47.6"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^10.2.1",

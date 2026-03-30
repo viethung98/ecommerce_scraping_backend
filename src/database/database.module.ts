@@ -1,68 +1,39 @@
 import { Module } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppConfigService } from '../config/app-config.service';
+import databaseConfig from '../config/database.config';
+import serverConfig from '../config/server.config';
 import {
-	AsinTrackingEntity,
 	CartEntity,
-	ChatSessionEntity,
 	OrderEntity,
 	PaymentEntity,
-	PriceAlertEntity,
-	PriceHistoryEntity,
-	ProductEntity,
-	SyncJobEntity,
 	TransactionEntity,
-	UserInteractionEntity,
-	UserProfileEntity,
 } from './entities';
-import { PriceHistoryRepository, ProductRepository } from './repositories';
 
 @Module({
 	imports: [
 		TypeOrmModule.forRootAsync({
-			inject: [AppConfigService],
-			useFactory: (config: AppConfigService) => ({
+			inject: [databaseConfig.KEY, serverConfig.KEY],
+			useFactory: (
+				db: ConfigType<typeof databaseConfig>,
+				server: ConfigType<typeof serverConfig>,
+			) => ({
 				type: 'postgres',
-				url: config.dbUrl,
-				// host: config.dbHost,
-				// port: config.dbPort,
-				// username: config.dbUsername,
-				// password: config.dbPassword,
-				database: config.dbDatabase,
-				entities: [
-					ProductEntity,
-					PriceHistoryEntity,
-					AsinTrackingEntity,
-					SyncJobEntity,
-					PriceAlertEntity,
-					UserProfileEntity,
-					UserInteractionEntity,
-					ChatSessionEntity,
-					CartEntity,
-					OrderEntity,
-					PaymentEntity,
-					TransactionEntity,
-				],
-				synchronize: config.dbSynchronize,
-				migrationsRun: config.dbMigrationsRun,
-				logging: config.nodeEnv === 'development',
+				url: db.url,
+				database: db.database,
+				entities: [CartEntity, OrderEntity, PaymentEntity, TransactionEntity],
+				synchronize: db.synchronize,
+				migrationsRun: db.migrationsRun,
+				logging: server.nodeEnv === 'development',
 			}),
 		}),
 		TypeOrmModule.forFeature([
-			ProductEntity,
-			PriceHistoryEntity,
-			AsinTrackingEntity,
-			SyncJobEntity,
-			PriceAlertEntity,
-			UserProfileEntity,
-			UserInteractionEntity,
-			ChatSessionEntity,
 			CartEntity,
 			OrderEntity,
 			PaymentEntity,
+			TransactionEntity,
 		]),
 	],
-	providers: [ProductRepository, PriceHistoryRepository],
-	exports: [TypeOrmModule, ProductRepository, PriceHistoryRepository],
+	exports: [TypeOrmModule],
 })
 export class DatabaseModule {}

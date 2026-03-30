@@ -39,19 +39,6 @@ export interface RawAmazonProduct {
 	[key: string]: any;
 }
 
-// Shopping Intent from AI
-export interface ShoppingIntent {
-	productCategory?: string;
-	keywords: string[];
-	brandPreference?: string[];
-	minPrice?: number;
-	maxPrice?: number;
-	features?: string[];
-	ratingMin?: number;
-	comparison?: boolean;
-	urgency?: 'low' | 'medium' | 'high';
-}
-
 // Search Filters
 export interface SearchFilters {
 	category?: string;
@@ -94,21 +81,4 @@ export interface SearchResult {
 	executionTime: number;
 }
 
-// Browser Use Cloud API Response Structure
-export interface BrowserUseSearchResponse {
-	success: boolean;
-	data: any[];
-	timestamp: string;
-	source: string;
-}
 
-// Sync Job Status
-export interface SyncJobStatus {
-	id: string;
-	status: 'pending' | 'running' | 'success' | 'failed';
-	type: 'full' | 'price_refresh' | 'manual';
-	startedAt?: Date;
-	completedAt?: Date;
-	productsProcessed?: number;
-	errors?: string[];
-}

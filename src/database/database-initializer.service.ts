@@ -5,20 +5,11 @@ const logger = new Logger('DatabaseInitializer');
 
 export async function initializeDatabase(): Promise<void> {
 	const dbUrl = process.env.DB_URL;
-	const dbHost = process.env.DB_HOST || 'localhost';
-	const dbPort = parseInt(process.env.DB_PORT || '5432', 10);
-	const dbUser = process.env.DB_USERNAME || 'postgres';
-	const dbPassword = process.env.DB_PASSWORD;
 	const dbName = process.env.DB_DATABASE || 'shopping_agent';
 
-	// Connect to 'postgres' default database to create our target database
 	const client = new Client({
-		url: dbUrl, // Support DATABASE_URL for platforms like Heroku
-		// host: dbHost,
-		// port: dbPort,
-		// user: dbUser,
-		// password: dbPassword,
-		database: dbName, // Connect to default postgres database
+		url: dbUrl,
+		database: dbName,
 	});
 
 	try {

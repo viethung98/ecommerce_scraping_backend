@@ -1,7 +1,8 @@
 import { SearchFilters } from '@/common/interfaces';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { ApifyClient } from 'apify-client';
-import { AppConfigService } from '../config/app-config.service';
+import servicesConfig from '../config/services.config';
 
 interface ApifyDatasetItem {
 	title: string;
@@ -19,8 +20,9 @@ interface ApifyDatasetItem {
 }
 
 interface ApifySearchInput {
-	keyword: string;
-	marketplaces: string[];
+	keyword?: string;
+	listingUrls?: Array<{ url: string }>;
+	marketplaces?: string[];
 	maxProductResults: number;
 	countryCode: string;
 	scrapeMode: string;
@@ -38,14 +40,20 @@ export class ApifyClientService {
 	private readonly actorId = 'apify/e-commerce-scraping-tool';
 	private readonly client: ApifyClient;
 
-	constructor(private readonly config: AppConfigService) {
+	constructor(
+		@Inject(servicesConfig.KEY)
+		private readonly services: ConfigType<typeof servicesConfig>,
+	) {
 		this.client = new ApifyClient({
-			token: this.config.apifyApiToken,
+			token: this.services.apifyApiToken,
 		});
 	}
 
 	/**
-	 * Search Amazon via Apify e-commerce scraping tool
+	 * Search Amazon via Apify e-commerce scraping tool.
+	 * Uses Amazon listing URLs with query parameters for native filtering
+	 * (sort, price range) when filters are provided, falling back to
+	 * keyword-only search otherwise.
 	 */
 	async searchAmazon(
 		query: string,
@@ -65,27 +73,23 @@ export class ApifyClientService {
 	}> {
 		try {
 			const { limit = 20, page = 1 } = options || {};
-			const queryWithFilters = this.buildQueryWithFilters(query, filters);
-			console.log('Final query for Apify:', queryWithFilters);
-			// Prepare input for Apify actor
+			const amazonSearchUrl = this.buildAmazonSearchUrl(query, filters, page);
+
 			const input: ApifySearchInput = {
-				keyword: queryWithFilters,
-				marketplaces: ['www.amazon.com'],
+				listingUrls: [{ url: amazonSearchUrl }],
 				maxProductResults: limit,
 				countryCode: 'vn',
 				scrapeMode: 'AUTO',
 				additionalProperties: true,
 				additionalPropertiesSearchEngine: true,
-				additionalReviewProperties: true,
+				additionalReviewProperties: false,
 				scrapeInfluencerProducts: false,
 				scrapeReviewsDelivery: false,
 				sortReview: 'Most recent',
 			};
 
-			// Start the actor run and wait for completion
 			const run = await this.client.actor(this.actorId).call(input);
 
-			// Get dataset items directly (SDK handles waiting)
 			const dataset = await this.client.dataset(run.defaultDatasetId || run.id);
 			const results = await dataset.listItems();
 
@@ -103,63 +107,101 @@ export class ApifyClientService {
 		}
 	}
 
-	buildQueryWithFilters(query: string, filters: SearchFilters): string {
-		let modifiedQuery = query;
+	/**
+	 * Build an Amazon search URL with native query parameters for filtering.
+	 * This lets the Apify actor scrape a pre-filtered Amazon results page
+	 * instead of relying on post-processing.
+	 */
+	buildAmazonSearchUrl(
+		query: string,
+		filters: SearchFilters,
+		page: number = 1,
+	): string {
+		const keywordParts = [query];
 
-		// Add category filter to query
-		if (filters.category) {
-			modifiedQuery += ` in category ${filters.category}`;
+		if (filters.category) keywordParts.push(filters.category);
+		if (filters.brand) keywordParts.push(filters.brand);
+		if (filters.color) keywordParts.push(filters.color);
+		if (filters.size) keywordParts.push(filters.size);
+
+		const params = new URLSearchParams();
+		params.set('k', keywordParts.join(' '));
+
+		// Amazon sort parameter
+		if (filters.sortBy) {
+			const sortMap: Record<string, string> = {
+				price_asc: 'price-asc-rank',
+				price_desc: 'price-desc-rank',
+				rating: 'review-rank',
+				newest: 'date-desc-rank',
+				popular: 'exact-aware-popularity-rank',
+				relevance: 'relevanceblender',
+			};
+			const sortValue = sortMap[filters.sortBy];
+			if (sortValue) {
+				params.set('s', sortValue);
+			}
 		}
 
-		if (filters.brand) {
-			modifiedQuery += ` from brand ${filters.brand}`;
+		// Amazon price range filter (rh parameter)
+		if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+			const min = filters.minPrice ?? 0;
+			const max = filters.maxPrice ?? '';
+			// Amazon uses cents for price range in the rh parameter
+			const minCents = Math.round(min * 100);
+			const maxCents = max !== '' ? Math.round((max as number) * 100) : '';
+			params.set('rh', `p_36:${minCents}-${maxCents}`);
 		}
 
-		if (filters.color) {
-			modifiedQuery += ` with color ${filters.color}`;
+		// Amazon Prime filter
+		if (filters.prime) {
+			params.append('rh', 'p_85:2470955011');
 		}
 
-		if (filters.size) {
-			modifiedQuery += ` with size ${filters.size}`;
+		// Amazon condition filter
+		if (filters.condition) {
+			const conditionMap: Record<string, string> = {
+				new: 'p_n_condition-type:6461716011',
+				used: 'p_n_condition-type:6461718011',
+				refurbished: 'p_n_condition-type:6461717011',
+			};
+			const conditionValue = conditionMap[filters.condition];
+			if (conditionValue) {
+				params.append('rh', conditionValue);
+			}
 		}
 
-		// Add price range filter to query
-		if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
-			modifiedQuery += ` with offer price in range ${filters.minPrice}$ and ${filters.maxPrice}$`;
-		} else if (filters.minPrice !== undefined) {
-			modifiedQuery += ` with offer price greater than ${filters.minPrice}$`;
-		} else if (filters.maxPrice !== undefined) {
-			modifiedQuery += ` with offer price less than ${filters.maxPrice}$`;
+		// Pagination
+		if (page > 1) {
+			params.set('page', String(page));
 		}
-		return modifiedQuery;
+
+		return `https://www.amazon.com/s?${params.toString()}`;
 	}
 
 	/**
-	 * Get product details by ASIN via Apify
+	 * Get product details by ASIN via Apify using direct product URL
 	 */
 	async getProductByAsin(asin: string): Promise<any> {
 		try {
 			this.logger.log(`Apify product request: ${asin}`);
-			const input: ApifySearchInput = {
-				keyword: asin,
-				marketplaces: ['www.amazon.com'],
+			const input = {
+				detailsUrls: [{ url: `https://www.amazon.com/dp/${asin}` }],
 				maxProductResults: 1,
 				countryCode: 'vn',
 				scrapeMode: 'AUTO',
 				additionalProperties: true,
-				additionalPropertiesSearchEngine: true,
-				additionalReviewProperties: true,
+				additionalPropertiesSearchEngine: false,
+				additionalReviewProperties: false,
 				scrapeInfluencerProducts: false,
 				scrapeReviewsDelivery: false,
 				sortReview: 'Most recent',
 			};
 
-			// Start the actor run and wait for completion
 			const run = await this.client.actor(this.actorId).call(input);
 
 			this.logger.log(`Apify run started: ${run.id}`);
 
-			// Get dataset items directly
 			const dataset = await this.client.dataset(run.defaultDatasetId || run.id);
 			const results = await dataset.listItems();
 

@@ -19,9 +19,14 @@ export class NormalizationService {
 	 */
 	normalize(raw: any): NormalizedProduct | null {
 		try {
-			// Check if this is Apify format (has additionalProperties)
+			// Detect Apify response format:
+			// - Detail/keyword results have `additionalProperties` as object
+			// - Listing URL results may use flat fields like `name`, `offers`, `image`
 			const isApifyFormat =
-				raw.additionalProperties && typeof raw.additionalProperties === 'object';
+				(raw.additionalProperties &&
+					typeof raw.additionalProperties === 'object') ||
+				raw.offers !== undefined ||
+				(raw.name !== undefined && raw.image !== undefined);
 
 			let asin: string;
 			let title: string;
@@ -37,27 +42,58 @@ export class NormalizationService {
 			let images: any[];
 
 			if (isApifyFormat) {
-				// Apify format
+				// Extract ASIN from multiple possible locations
 				asin =
-					raw.additionalProperties?.asin || (raw.url ? extractAsin(raw.url) : null);
-				title = cleanText(raw.name);
-				price = raw.offers?.price;
-				listPrice = raw.additionalProperties?.listPrice?.value;
-				rating = raw.additionalProperties?.stars;
-				reviewsCount = raw.additionalProperties?.reviewsCount;
+					raw.additionalProperties?.asin ||
+					raw.asin ||
+					raw.id ||
+					(raw.url ? extractAsin(raw.url) : null) ||
+					(raw.productUrl ? extractAsin(raw.productUrl) : null);
+
+				title = cleanText(raw.name || raw.title);
+
+				// Price can be in offers object or flat
+				price =
+					raw.offers?.price ??
+					raw.price ??
+					raw.currentPrice ??
+					raw.salePrice;
+				listPrice =
+					raw.additionalProperties?.listPrice?.value ??
+					raw.listPrice ??
+					raw.originalPrice ??
+					raw.wasPrice;
+
+				rating =
+					raw.additionalProperties?.stars ??
+					raw.stars ??
+					raw.rating ??
+					raw.aggregateRating?.ratingValue;
+				reviewsCount =
+					raw.additionalProperties?.reviewsCount ??
+					raw.reviewsCount ??
+					raw.reviewCount ??
+					raw.aggregateRating?.reviewCount;
+
 				availability =
-					raw.additionalProperties?.inStock !== undefined
-						? raw.additionalProperties.inStock
-						: true; // Default to true if not specified
-				brand = cleanText(raw.brand?.slogan);
+					raw.additionalProperties?.inStock ??
+					raw.inStock ??
+					raw.availability ??
+					(raw.offers?.availability
+						? raw.offers.availability.includes('InStock')
+						: true);
+
+				brand = cleanText(
+					raw.brand?.name || raw.brand?.slogan || raw.brand,
+				);
 				category = this.extractCategoryFromBreadcrumbs(
-					raw.additionalProperties?.breadCrumbs,
+					raw.additionalProperties?.breadCrumbs || raw.breadcrumbs,
 				);
 				description = cleanText(raw.description);
-				url = raw.url;
-				images = [raw.image].filter(Boolean);
+				url = raw.url || raw.productUrl;
+				images = this.extractApifyImages(raw);
 			} else {
-				// Original format
+				// Original / legacy format
 				asin = raw.asin || (raw.url ? extractAsin(raw.url) : null);
 				title = cleanText(raw.title);
 				price = raw.price;
@@ -149,13 +185,58 @@ export class NormalizationService {
 	normalizeBatch(rawProducts: any[]): NormalizedProduct[] {
 		this.logger.log(`Normalizing ${rawProducts.length} products...`);
 
-		const normalized = rawProducts
-			.map((raw) => this.normalize(raw))
-			.filter((product) => product !== null);
+		const normalized: NormalizedProduct[] = [];
+		for (const raw of rawProducts) {
+			const product = this.normalize(raw);
+			if (product) {
+				normalized.push(product);
+			} else {
+				this.logger.debug(
+					`Failed to normalize item: ${JSON.stringify({ name: raw.name, title: raw.title, url: raw.url, keys: Object.keys(raw).slice(0, 10) })}`,
+				);
+			}
+		}
 
-		this.logger.log(`Successfully normalized ${normalized.length} products`);
+		this.logger.log(
+			`Successfully normalized ${normalized.length}/${rawProducts.length} products`,
+		);
 
 		return normalized;
+	}
+
+	/**
+	 * Extract images from Apify response (handles multiple field shapes)
+	 */
+	private extractApifyImages(raw: any): string[] {
+		const images: string[] = [];
+
+		// Single image field
+		if (typeof raw.image === 'string' && raw.image) {
+			images.push(raw.image);
+		}
+
+		// Array of images
+		if (Array.isArray(raw.images)) {
+			for (const img of raw.images) {
+				if (typeof img === 'string' && img) images.push(img);
+				else if (typeof img === 'object' && img?.url) images.push(img.url);
+			}
+		}
+
+		// Thumbnail
+		if (typeof raw.thumbnail === 'string' && raw.thumbnail && images.length === 0) {
+			images.push(raw.thumbnail);
+		}
+
+		// additionalProperties images
+		if (Array.isArray(raw.additionalProperties?.images)) {
+			for (const img of raw.additionalProperties.images) {
+				if (typeof img === 'string' && img) images.push(img);
+				else if (typeof img === 'object' && img?.url) images.push(img.url);
+			}
+		}
+
+		return [...new Set(images)]; // deduplicate
 	}
 
 	/**
@@ -231,8 +312,8 @@ export class NormalizationService {
 	 * Validate normalized product
 	 */
 	validate(product: NormalizedProduct): boolean {
-		if (!product.asin || product.asin.length !== 10) {
-			this.logger.warn(`Invalid ASIN: ${product.asin}`);
+		if (!product.asin || product.asin.length === 0) {
+			this.logger.warn(`Missing ASIN, skipping product: ${product.title}`);
 			return false;
 		}
 
@@ -241,7 +322,11 @@ export class NormalizationService {
 			return false;
 		}
 
-		if (product.rating !== null && (product.rating < 0 || product.rating > 5)) {
+		if (
+			product.rating !== undefined &&
+			product.rating !== null &&
+			(product.rating < 0 || product.rating > 5)
+		) {
 			this.logger.warn(
 				`Invalid rating for ASIN ${product.asin}: ${product.rating}`,
 			);

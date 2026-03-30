@@ -6,10 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AppConfigService } from '../config/app-config.service';
 import { PaymentEntity } from '../database/entities/payment.entity';
 import { OrderService } from '../order/order.service';
-import { ScanService } from '../paywall/scan.service';
+import { VerificationService } from '../mpp/verification.service';
 import {
 	GeneratePaymentRequestDto,
 	PaymentWebhookDto,
@@ -26,12 +25,11 @@ export class PaymentService {
 		@InjectRepository(PaymentEntity)
 		private readonly paymentRepo: Repository<PaymentEntity>,
 		private readonly orderService: OrderService,
-		private readonly config: AppConfigService,
-		private readonly scanService: ScanService,
+		private readonly verificationService: VerificationService,
 	) {}
 
 	/**
-	 * Generate a Polkadot payment request for an order.
+	 * Generate a payment request for an order on the specified network.
 	 */
 	async generatePaymentRequest(dto: GeneratePaymentRequestDto): Promise<{
 		payment_id: string;
@@ -70,6 +68,9 @@ export class PaymentService {
 			};
 		}
 
+		const networkConfig = this.verificationService.getNetworkConfig(
+			dto.network || 'polkadot',
+		);
 		const expiresAt = new Date(Date.now() + this.PAYMENT_TTL_MS);
 
 		const payment = await this.paymentRepo.save(
@@ -77,9 +78,9 @@ export class PaymentService {
 				orderId: dto.order_id,
 				userId: dto.user_id,
 				amount: order.amount,
-				token: 'DOT',
-				network: this.config.polkadotNetwork,
-				recipientAddress: this.config.polkadotMerchantAddress,
+				token: networkConfig.token,
+				network: networkConfig.network,
+				recipientAddress: networkConfig.recipient,
 				status: 'pending',
 				expiresAt,
 			}),
@@ -98,7 +99,7 @@ export class PaymentService {
 	}
 
 	/**
-	 * Handle payment webhook from frontend after Polkadot extrinsic submission.
+	 * Handle payment webhook from frontend after transaction submission.
 	 * Verifies the on-chain transaction before confirming the order.
 	 */
 	async handleWebhook(dto: PaymentWebhookDto): Promise<{
@@ -142,7 +143,14 @@ export class PaymentService {
 		// Verify on-chain
 		if (dto.status === 'confirmed') {
 			try {
-				await this.verifyOnChain(dto.block_hash);
+				const proof = await this.verificationService.verifyPaymentProof(
+					payment.network,
+					dto.block_hash,
+				);
+				if (!proof.ok) {
+					throw new Error(proof.reason || 'Unable to verify payment proof');
+				}
+
 				payment.status = 'confirmed';
 				await this.paymentRepo.save(payment);
 				await this.orderService.updateOrderStatus(payment.orderId, 'paid');
@@ -185,24 +193,12 @@ export class PaymentService {
 	}
 
 	/**
-	 * Verify Polkadot payment proof via Routescan API.
-	 */
-	private async verifyOnChain(txHash: string): Promise<void> {
-		const proof = await this.scanService.verifyPaymentProof({
-			txHash,
-			recipient: this.config.polkadotMerchantAddress,
-			minAmountPlanck: this.config.polkadotPaymentAmountPlanck,
-		});
-
-		if (!proof.ok) {
-			throw new Error(proof.reason || 'Unable to verify payment proof');
-		}
-	}
-
-	/**
 	 * Get transaction details from block hash
 	 */
-	async getTransactionDetails(txHash: string): Promise<{
+	async getTransactionDetails(
+		txHash: string,
+		network?: string,
+	): Promise<{
 		success: boolean;
 		msg?: string;
 		code?: number;
@@ -216,8 +212,10 @@ export class PaymentService {
 		};
 	}> {
 		try {
-			// Use the scan service to get transaction details
-			const detail = await this.scanService.getTransactionDetail(txHash);
+			const detail = await this.verificationService.getTransactionDetail(
+				network || 'polkadot',
+				txHash,
+			);
 			if (!detail) {
 				this.logger.debug(`No transaction found for tx hash: ${txHash}`);
 				return {

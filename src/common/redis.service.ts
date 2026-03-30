@@ -1,29 +1,34 @@
 import {
+	Inject,
 	Injectable,
 	Logger,
 	OnModuleDestroy,
 	OnModuleInit,
 } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import Redis from 'ioredis';
-import { AppConfigService } from '../config/app-config.service';
+import redisConfig from '../config/redis.config';
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
 	private readonly logger = new Logger(RedisService.name);
 	private client: Redis;
 
-	constructor(private readonly config: AppConfigService) {}
+	constructor(
+		@Inject(redisConfig.KEY)
+		private readonly redis: ConfigType<typeof redisConfig>,
+	) {}
 
 	async onModuleInit(): Promise<void> {
 		const redisOptions: any = {
-			host: this.config.redisHost,
-			port: this.config.redisPort,
+			host: this.redis.host,
+			port: this.redis.port,
 			maxRetriesPerRequest: 3,
 			lazyConnect: true,
 		};
 
-		if (this.config.redisPassword) {
-			redisOptions.password = this.config.redisPassword;
+		if (this.redis.password) {
+			redisOptions.password = this.redis.password;
 		}
 
 		this.client = new Redis(redisOptions);
@@ -50,9 +55,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Set a key with expiration time
-	 */
 	async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
 		try {
 			if (ttlSeconds) {
@@ -66,9 +68,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Get a value by key
-	 */
 	async get(key: string): Promise<string | null> {
 		try {
 			return await this.client.get(key);
@@ -78,9 +77,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Delete a key
-	 */
 	async del(key: string): Promise<number> {
 		try {
 			return await this.client.del(key);
@@ -90,9 +86,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Check if key exists
-	 */
 	async exists(key: string): Promise<boolean> {
 		try {
 			const result = await this.client.exists(key);
@@ -103,9 +96,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Set key only if it doesn't exist (for idempotency)
-	 */
 	async setnx(
 		key: string,
 		value: string,
@@ -123,9 +113,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Acquire a distributed lock
-	 */
 	async acquireLock(
 		lockKey: string,
 		ttlSeconds: number = 30,
@@ -146,9 +133,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Release a distributed lock
-	 */
 	async releaseLock(lockKey: string, lockValue: string): Promise<boolean> {
 		try {
 			const script = `
@@ -166,9 +150,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Extend lock TTL
-	 */
 	async extendLock(
 		lockKey: string,
 		lockValue: string,
@@ -196,9 +177,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	/**
-	 * Get client instance (for advanced operations)
-	 */
 	getClient(): Redis {
 		return this.client;
 	}

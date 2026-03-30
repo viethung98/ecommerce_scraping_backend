@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SearchFilters, SearchResult } from '../common/interfaces';
+import {
+	NormalizedProduct,
+	SearchFilters,
+	SearchResult,
+} from '../common/interfaces';
 import { NormalizationService } from '../normalization/normalization.service';
 import { ApifyClientService } from './apify-client.service';
-import { BrowserUseClientService } from './browser-use-client.service';
 
 @Injectable()
 export class RealtimeSearchService {
@@ -10,7 +13,6 @@ export class RealtimeSearchService {
 
 	constructor(
 		private readonly apifyClient: ApifyClientService,
-		private readonly browserUseClient: BrowserUseClientService,
 		private readonly normalization: NormalizationService,
 	) {}
 
@@ -31,16 +33,27 @@ export class RealtimeSearchService {
 				limit,
 				page,
 			});
+			this.logger.debug(`Apify raw items: ${apifyResponse.data.items.length}`);
+			if (apifyResponse.data.items.length > 0) {
+				this.logger.debug(
+					`Sample item keys: ${Object.keys(apifyResponse.data.items[0]).join(', ')}`,
+				);
+			}
 
 			// Normalize results
-			const normalizedProducts = this.normalization.normalizeAndValidate(
+			let normalizedProducts = this.normalization.normalizeAndValidate(
 				apifyResponse.data.items,
 			);
-			// // Apply additional filters
-			// const filteredProducts = this.applyFilters(normalizedProducts, filters);
+			this.logger.debug(
+				`After normalization: ${normalizedProducts.length} products`,
+			);
+
+			// Apply price filtering as post-processing
+			// The Apify actor does not support price range parameters natively
+			normalizedProducts = this.applyPriceFilter(normalizedProducts, filters);
 
 			const executionTime = Date.now() - startTime;
-			const total = apifyResponse.data.total;
+			const total = normalizedProducts.length;
 			const totalPage = Math.ceil(total / limit);
 
 			return {
@@ -81,68 +94,23 @@ export class RealtimeSearchService {
 	}
 
 	/**
-	 * Apply filters to normalized products
+	 * Filter products by price range after normalization.
+	 * Applied as post-processing because the Apify actor does not support
+	 * price range input parameters natively.
 	 */
-	private applyFilters(products: any[], filters?: SearchFilters): any[] {
+	private applyPriceFilter(
+		products: NormalizedProduct[],
+		filters?: SearchFilters,
+	): NormalizedProduct[] {
 		if (!filters) return products;
 
+		const { minPrice, maxPrice } = filters;
+		if (minPrice === undefined && maxPrice === undefined) return products;
+
 		return products.filter((product) => {
-			// Category filter
-			if (filters.category && product.category !== filters.category) {
-				return false;
-			}
-
-			// Brand filter
-			if (
-				filters.brand &&
-				product.brand?.toLowerCase() !== filters.brand.toLowerCase()
-			) {
-				return false;
-			}
-
-			// Price filters
-			if (
-				filters.minPrice &&
-				(!product.price || product.price < filters.minPrice)
-			) {
-				return false;
-			}
-			if (
-				filters.maxPrice &&
-				(!product.price || product.price > filters.maxPrice)
-			) {
-				return false;
-			}
-
-			// Rating filter
-			if (
-				filters.minRating &&
-				(!product.rating || product.rating < filters.minRating)
-			) {
-				return false;
-			}
-
-			// Review count filter
-			if (
-				filters.minReviewCount &&
-				(!product.reviewCount || product.reviewCount < filters.minReviewCount)
-			) {
-				return false;
-			}
-
-			// Availability filter
-			if (
-				filters.available !== undefined &&
-				product.available !== filters.available
-			) {
-				return false;
-			}
-
-			// Fulfillment filter (e.g., Prime)
-			if (filters.fulfillment && product.fulfillment !== filters.fulfillment) {
-				return false;
-			}
-
+			if (product.price === undefined || product.price === null) return false;
+			if (minPrice !== undefined && product.price < minPrice) return false;
+			if (maxPrice !== undefined && product.price > maxPrice) return false;
 			return true;
 		});
 	}

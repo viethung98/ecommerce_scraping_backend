@@ -1,13 +1,14 @@
 import { ApiResponse } from '@/common/dto/response.dto';
 import { HttpService } from '@nestjs/axios';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { AppConfigService } from '../config/app-config.service';
 import { RedisService } from '../common/redis.service';
+import servicesConfig from '../config/services.config';
 import { TransactionEntity, TransactionStatus } from '../database/entities';
-import { ScanService } from '../paywall/scan.service';
+import { VerificationService } from '../mpp/verification.service';
 import { VerifyTransactionDto, VerifyTransactionRequestDto } from './dto';
 
 @Injectable()
@@ -17,16 +18,17 @@ export class TransactionService {
 	constructor(
 		@InjectRepository(TransactionEntity)
 		private readonly transactionRepo: Repository<TransactionEntity>,
-		private readonly scanService: ScanService,
+		private readonly verificationService: VerificationService,
 		private readonly redisService: RedisService,
 		private readonly httpService: HttpService,
-		private readonly configService: AppConfigService,
+		@Inject(servicesConfig.KEY)
+		private readonly services: ConfigType<typeof servicesConfig>,
 	) {}
 
 	async verifyTransaction(
 		request: VerifyTransactionRequestDto,
 	): Promise<ApiResponse<VerifyTransactionDto>> {
-		const { txHash, userId } = request;
+		const { txHash, userId, network } = request;
 		const lockKey = `lock:tx_verify:${txHash}`;
 		let lockValue: string | null = null;
 
@@ -52,13 +54,20 @@ export class TransactionService {
 			}
 
 			// Transaction doesn't exist, create and process it
+			const resolvedNetwork = network || 'polkadot';
 			const newTransaction = this.transactionRepo.create({
 				txHash,
 				userId,
-				status: 'PENDING', 
+				status: 'PENDING',
+				network: resolvedNetwork,
 			});
 
-			return await this.processTransaction(txHash, userId, newTransaction);
+			return await this.processTransaction(
+				txHash,
+				userId,
+				newTransaction,
+				resolvedNetwork,
+			);
 		} catch (error) {
 			this.logger.error(
 				`Transaction verification failed: ${error.message}`,
@@ -72,15 +81,18 @@ export class TransactionService {
 		}
 	}
 
-
 	private async processTransaction(
 		txHash: string,
 		userId: string,
 		transaction: TransactionEntity,
+		network: string,
 	): Promise<ApiResponse<VerifyTransactionDto>> {
 		try {
 			// Get transaction details from blockchain
-			const txDetails = await this.scanService.getTransactionDetail(txHash);
+			const txDetails = await this.verificationService.getTransactionDetail(
+				network,
+				txHash,
+			);
 
 			if (!txDetails) {
 				await this.updateTransactionStatus(
@@ -91,30 +103,21 @@ export class TransactionService {
 				return ApiResponse.error(404, 'Transaction not found on blockchain');
 			}
 
-			// // Validate transaction
-			// const validationResult = await this.validateTransaction(txDetails, userId);
-
-			// if (!validationResult.isValid) {
-			// 	await this.updateTransactionStatus(
-			// 		transaction,
-			// 		'FAILED',
-			// 		validationResult.error,
-			// 	);
-			// 	return ApiResponse.error(500, validationResult.error);
-			// }
-
 			transaction.receiver = txDetails.to;
 			transaction.originAmount = txDetails.value;
 			transaction.amount = parseFloat(txDetails.amount);
 			transaction.status = 'SUCCESS';
 			await this.transactionRepo.save(transaction);
-			console.log('Transaction verified and saved:', transaction);
+			this.logger.log(`Transaction verified and saved: ${txHash}`);
 
 			// Call downstream service (idempotent)
+			const networkConfig = this.verificationService.getNetworkConfig(network);
 			await this.callDownstreamService({
 				userId,
 				address: txDetails.to,
-				amountPAS: txDetails.value,
+				amount: txDetails.value,
+				network,
+				currency: networkConfig.token,
 				txHash,
 			});
 
@@ -136,23 +139,6 @@ export class TransactionService {
 		}
 	}
 
-	private async validateTransaction(
-		txDetails: any,
-		userId: string,
-	): Promise<{ isValid: boolean; error?: string }> {
-		// Check if transaction exists and is confirmed
-		if (!txDetails || !txDetails.blockNumber) {
-			return { isValid: false, error: 'Transaction not confirmed' };
-		}
-
-		// Check amount is positive
-		if (!txDetails.value || parseFloat(txDetails.value) <= 0) {
-			return { isValid: false, error: 'Invalid transaction amount' };
-		}
-
-		return { isValid: true };
-	}
-
 	private async updateTransactionStatus(
 		transaction: TransactionEntity,
 		status: TransactionStatus,
@@ -168,7 +154,9 @@ export class TransactionService {
 	private async callDownstreamService(data: {
 		userId: string;
 		address: string;
-		amountPAS: string;
+		amount: string;
+		network: string;
+		currency: string;
 		txHash: string;
 	}): Promise<void> {
 		try {
@@ -184,24 +172,24 @@ export class TransactionService {
 				return;
 			}
 
-			const baseUrl = this.configService.comagentBaseUrl;
-			const webhookSecret = this.configService.depositWebhookSecret;
+			const baseUrl = this.services.comagentBaseUrl;
+			const webhookSecret = this.services.depositWebhookSecret;
 			const url = `${baseUrl}/api/deposit/${data.userId}/${data.address}/confirm`;
 
+			const payload = {
+				amount: parseInt(data.amount),
+				transactionHash: data.txHash,
+				network: data.network,
+				currency: data.currency,
+			};
+
 			const response = await firstValueFrom(
-				this.httpService.post(
-					url,
-					{
-						amountPAS: parseInt(data.amountPAS),
-						transactionHash: data.txHash,
+				this.httpService.post(url, payload, {
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Webhook-Secret': webhookSecret,
 					},
-					{
-						headers: {
-							'Content-Type': 'application/json',
-							'X-Webhook-Secret': webhookSecret,
-						},
-					},
-				),
+				}),
 			);
 
 			// Mark as processed

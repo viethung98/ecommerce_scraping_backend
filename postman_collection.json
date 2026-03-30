@@ -1,0 +1,250 @@
+{
+  "info": {
+    "name": "Coma Backend API",
+    "description": "API collection for the Coma Backend (Amazon Shopping Agent)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Realtime Search",
+      "item": [
+        {
+          "name": "Search Products (MppCharge)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Payment {{mppCredential}}",
+                "description": "MPP payment credential (required when MPP is enabled)",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/realtime?q=laptop&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "realtime"],
+              "query": [
+                { "key": "q", "value": "laptop", "description": "Search query (required)" },
+                { "key": "page", "value": "1", "description": "Page number (default: 1)" },
+                { "key": "limit", "value": "20", "description": "Results per page (default: 20, max: 100)" },
+                { "key": "category", "value": "", "description": "Filter by category", "disabled": true },
+                { "key": "brand", "value": "", "description": "Filter by brand", "disabled": true },
+                { "key": "color", "value": "", "description": "Filter by color", "disabled": true },
+                { "key": "size", "value": "", "description": "Filter by size", "disabled": true },
+                { "key": "minPrice", "value": "", "description": "Minimum price", "disabled": true },
+                { "key": "maxPrice", "value": "", "description": "Maximum price", "disabled": true },
+                { "key": "minRating", "value": "", "description": "Minimum rating (0-5)", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ASIN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/realtime/product/:asin",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "realtime", "product", ":asin"],
+              "variable": [
+                { "key": "asin", "value": "B0DGHTZQTL", "description": "Amazon ASIN" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Realtime Search Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/realtime/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "realtime", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cart_id\": \"cart_12345\",\n  \"user_id\": \"user_12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/checkout",
+              "host": ["{{baseUrl}}"],
+              "path": ["checkout"]
+            }
+          }
+        },
+        {
+          "name": "Get Orders by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders?user_id=user_12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"],
+              "query": [
+                { "key": "user_id", "value": "user_12345", "description": "User ID (required)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "00000000-0000-0000-0000-000000000000", "description": "Order UUID" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Generate Payment Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"user_id\": \"user_12345\",\n  \"network\": \"tempo-testnet\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment", "request"]
+            }
+          }
+        },
+        {
+          "name": "Payment Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": \"pay_12345\",\n  \"block_hash\": \"0xabc123...\",\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Verify Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"txHash\": \"0x123abc...\",\n  \"userId\": \"user_12345\",\n  \"network\": \"tempo-testnet\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment/transaction/:txHash",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment", "transaction", ":txHash"],
+              "variable": [
+                { "key": "txHash", "value": "0x123abc...", "description": "Transaction hash" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payment/:paymentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payment", ":paymentId"],
+              "variable": [
+                { "key": "paymentId", "value": "00000000-0000-0000-0000-000000000000", "description": "Payment UUID" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

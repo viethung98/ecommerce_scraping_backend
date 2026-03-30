@@ -1,13 +1,15 @@
+import { MppCharge } from '@/mpp/mpp.decorator';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiResponse, SearchResponseDto } from '../common/dto/response.dto';
 import { SearchQueryDto } from '../common/dto/search.dto';
 import { RealtimeSearchService } from './realtime-search.service';
 
+@MppCharge({ amount: '0.1' })
 @Controller('search/realtime')
-// @RequirePayment()
 export class RealtimeSearchController {
 	constructor(private readonly realtimeSearch: RealtimeSearchService) {}
 
+	@MppCharge({ amount: '0.1' })
 	@Get()
 	async search(
 		@Query() query: SearchQueryDto,

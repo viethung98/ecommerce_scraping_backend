@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class GeneratePaymentRequestDto {
 	@IsUUID()
@@ -6,6 +6,10 @@ export class GeneratePaymentRequestDto {
 
 	@IsString()
 	user_id: string;
+
+	@IsOptional()
+	@IsString()
+	network?: string;
 }
 
 export class PaymentWebhookDto {

@@ -3,11 +3,10 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../common/redis.module';
-import { AppConfigModule } from '../config/app-config.module';
 import { OrderEntity } from '../database/entities/order.entity';
 import { PaymentEntity } from '../database/entities/payment.entity';
 import { OrderModule } from '../order/order.module';
-import { PaywallModule } from '../paywall/paywall.module';
+import { MppModule } from '../mpp/mpp.module';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { TransactionService } from './transaction.service';
@@ -16,9 +15,8 @@ import { TransactionService } from './transaction.service';
 	imports: [
 		TypeOrmModule.forFeature([OrderEntity, PaymentEntity, TransactionEntity]),
 		OrderModule,
-		AppConfigModule,
 		HttpModule,
-		PaywallModule,
+		MppModule,
 		RedisModule,
 	],
 	providers: [PaymentService, TransactionService],
